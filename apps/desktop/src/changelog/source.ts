@@ -1,9 +1,4 @@
-export function changelogUrl(version: string): string | null {
-  if (/^\d+\.\d+\.\d+-nightly\.\d+$/.test(version)) {
-    return `https://api.github.com/repos/fastrepl/anarlog/releases/tags/desktop_nightly_v${version}`;
-  }
-  if (/^\d+\.\d+\.\d+$/.test(version)) {
-    return `https://raw.githubusercontent.com/fastrepl/anarlog/main/packages/changelog/content/desktop/${version}.md`;
-  }
+// Release notes are bundled locally; never check an upstream feed at runtime.
+export function changelogUrl(_version: string): string | null {
   return null;
 }

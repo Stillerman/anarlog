@@ -320,12 +320,6 @@ describe("SQLite settings", () => {
     expect(result.values.theme).toBe("dark");
   });
 
-  it("applies the automatic update policy when it changes", async () => {
-    await setSettingValues({ automatic_updates: false });
-
-    expect(mocks.setAutomaticUpdatesEnabled).toHaveBeenCalledWith(false);
-  });
-
   it("disables PostHog after persisting the analytics opt-out", async () => {
     let resolveDisabled!: (value: { status: "ok"; data: null }) => void;
     mocks.setDisabled.mockReturnValueOnce(

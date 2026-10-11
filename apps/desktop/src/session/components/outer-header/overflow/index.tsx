@@ -33,6 +33,7 @@ import { DeleteNote } from "./delete";
 import { ExportModal } from "./export-modal";
 import { Listening } from "./listening";
 import { LockNote } from "./lock-note";
+import { SendToAgentDialog } from "./send-to-agent";
 
 import { useAudioPlayer } from "~/audio-player";
 import { openFloatingMeetingPanel } from "~/meeting-float/host";
@@ -61,6 +62,9 @@ export function OverflowButton({
   currentView: EditorView;
 }) {
   const [open, setOpen] = useState(false);
+  const [agentTarget, setAgentTarget] = useState<
+    "james" | "arkenza" | "kim" | null
+  >(null);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [hasOpenedExportModal, setHasOpenedExportModal] = useState(false);
   const [isVersionHistoryOpen, setIsVersionHistoryOpen] = useState(false);
@@ -208,6 +212,34 @@ export function OverflowButton({
               </>
             )}
             {hasRecordingActions && <DropdownMenuSeparator />}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger
+                disabled={!hasTranscript || isMeetingInProgress}
+                className="cursor-pointer"
+              >
+                Send to agent
+              </DropdownMenuSubTrigger>
+              <DropdownMenuPortal>
+                <DropdownMenuSubContent variant="app">
+                  {(["james", "arkenza", "kim"] as const).map((agent) => (
+                    <DropdownMenuItem
+                      key={agent}
+                      onClick={() => {
+                        setOpen(false);
+                        setAgentTarget(agent);
+                      }}
+                    >
+                      Send to{" "}
+                      {agent === "james"
+                        ? "James"
+                        : agent === "arkenza"
+                          ? "Arkenza"
+                          : "Kim"}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuPortal>
+            </DropdownMenuSub>
             <DropdownMenuItem
               onClick={openExportModal}
               className="cursor-pointer"
@@ -247,6 +279,17 @@ export function OverflowButton({
           </AppFloatingPanel>
         </DropdownMenuContent>
       </DropdownMenu>
+      {agentTarget && (
+        <SendToAgentDialog
+          key={`${sessionId}:${agentTarget}`}
+          sessionId={sessionId}
+          agent={agentTarget}
+          open
+          onOpenChange={(nextOpen) => {
+            if (!nextOpen) setAgentTarget(null);
+          }}
+        />
+      )}
       {hasOpenedExportModal && (
         <ExportModal
           sessionId={sessionId}

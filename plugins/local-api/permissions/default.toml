@@ -1,6 +1,10 @@
 [default]
 description = "Default permissions for the plugin"
 permissions = [
+  "allow-platform-targets",
+  "allow-configure-platform-target",
+  "allow-preview-platform-meeting",
+  "allow-send-platform-meeting",
   "allow-list-webhooks",
   "allow-create-webhook",
   "allow-delete-webhook",

@@ -97,7 +97,176 @@
     "dictation:default",
     {
       "identifier": "http:default",
-      "deny": [],
+      "deny": [
+        {
+          "url": "http://anarlog.so/**"
+        },
+        {
+          "url": "http://anarlog.so:*/**"
+        },
+        {
+          "url": "http://*.anarlog.so/**"
+        },
+        {
+          "url": "http://*.anarlog.so:*/**"
+        },
+        {
+          "url": "http://hyprnote.com/**"
+        },
+        {
+          "url": "http://hyprnote.com:*/**"
+        },
+        {
+          "url": "http://*.hyprnote.com/**"
+        },
+        {
+          "url": "http://*.hyprnote.com:*/**"
+        },
+        {
+          "url": "http://hyprnote.so/**"
+        },
+        {
+          "url": "http://hyprnote.so:*/**"
+        },
+        {
+          "url": "http://*.hyprnote.so/**"
+        },
+        {
+          "url": "http://*.hyprnote.so:*/**"
+        },
+        {
+          "url": "http://char.com/**"
+        },
+        {
+          "url": "http://char.com:*/**"
+        },
+        {
+          "url": "http://*.char.com/**"
+        },
+        {
+          "url": "http://*.char.com:*/**"
+        },
+        {
+          "url": "http://fastrepl.com/**"
+        },
+        {
+          "url": "http://fastrepl.com:*/**"
+        },
+        {
+          "url": "http://*.fastrepl.com/**"
+        },
+        {
+          "url": "http://*.fastrepl.com:*/**"
+        },
+        {
+          "url": "http://posthog.com/**"
+        },
+        {
+          "url": "http://posthog.com:*/**"
+        },
+        {
+          "url": "http://*.posthog.com/**"
+        },
+        {
+          "url": "http://*.posthog.com:*/**"
+        },
+        {
+          "url": "http://sentry.io/**"
+        },
+        {
+          "url": "http://sentry.io:*/**"
+        },
+        {
+          "url": "http://*.sentry.io/**"
+        },
+        {
+          "url": "http://*.sentry.io:*/**"
+        },
+        {
+          "url": "https://anarlog.so/**"
+        },
+        {
+          "url": "https://anarlog.so:*/**"
+        },
+        {
+          "url": "https://*.anarlog.so/**"
+        },
+        {
+          "url": "https://*.anarlog.so:*/**"
+        },
+        {
+          "url": "https://hyprnote.com/**"
+        },
+        {
+          "url": "https://hyprnote.com:*/**"
+        },
+        {
+          "url": "https://*.hyprnote.com/**"
+        },
+        {
+          "url": "https://*.hyprnote.com:*/**"
+        },
+        {
+          "url": "https://hyprnote.so/**"
+        },
+        {
+          "url": "https://hyprnote.so:*/**"
+        },
+        {
+          "url": "https://*.hyprnote.so/**"
+        },
+        {
+          "url": "https://*.hyprnote.so:*/**"
+        },
+        {
+          "url": "https://char.com/**"
+        },
+        {
+          "url": "https://char.com:*/**"
+        },
+        {
+          "url": "https://*.char.com/**"
+        },
+        {
+          "url": "https://*.char.com:*/**"
+        },
+        {
+          "url": "https://fastrepl.com/**"
+        },
+        {
+          "url": "https://fastrepl.com:*/**"
+        },
+        {
+          "url": "https://*.fastrepl.com/**"
+        },
+        {
+          "url": "https://*.fastrepl.com:*/**"
+        },
+        {
+          "url": "https://posthog.com/**"
+        },
+        {
+          "url": "https://posthog.com:*/**"
+        },
+        {
+          "url": "https://*.posthog.com/**"
+        },
+        {
+          "url": "https://*.posthog.com:*/**"
+        },
+        {
+          "url": "https://sentry.io/**"
+        },
+        {
+          "url": "https://sentry.io:*/**"
+        },
+        {
+          "url": "https://*.sentry.io/**"
+        },
+        {
+          "url": "https://*.sentry.io:*/**"
+        }
+      ],
       "allow": [
         {
           "url": "http://localhost:*/**"

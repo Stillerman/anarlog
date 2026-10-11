@@ -6900,3 +6900,11 @@ msgstr "Your week at a glance"
 #: src/templates/template-sidebar.tsx
 msgid "Z to A"
 msgstr "Z to A"
+
+#: src/onboarding/index.tsx
+msgid "Anarlog needs microphone and system audio to transcribe your meetings. Optional Accessibility access can read meeting controls and visible chat."
+msgstr "Anarlog needs microphone and system audio to transcribe your meetings. Optional Accessibility access can read meeting controls and visible chat."
+
+#: src/onboarding/permissions.tsx
+msgid "Optional: read meeting activity"
+msgstr "Optional: read meeting activity"

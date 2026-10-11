@@ -1,6 +1,7 @@
 // Must be the first import: React only reports commits to a devtools hook that
 // exists before react-dom evaluates.
 import "./devtools-bar/render-hook";
+import "./network-policy";
 import "./styles/globals.css";
 import "./styles/cursor.css";
 
@@ -10,7 +11,6 @@ import { StrictMode, useMemo } from "react";
 import ReactDOM from "react-dom/client";
 
 import "@anlg/ui/globals.css";
-import { commands as analyticsCommands } from "@anlg/plugin-analytics";
 import {
   getCurrentWebviewWindowLabel,
   init as initWindowsPlugin,
@@ -19,7 +19,6 @@ import { Toaster } from "@anlg/ui/components/ui/toast";
 import { useMountEffect } from "@anlg/ui/hooks/use-mount-effect";
 
 import { AITaskWindowSyncBridge } from "./ai/task-window-sync";
-import { trackAnalyticsEvent } from "./analytics";
 import { createToolRegistry } from "./contexts/tool-registry/core";
 import {
   captureOperationalError,
@@ -38,13 +37,12 @@ import {
 } from "./services/task-scheduler";
 import { TrayRecordingSync } from "./services/tray-recording";
 import { TrayScheduleSync } from "./services/tray-schedule";
-import { UpdaterMeetingSync } from "./services/updater-meeting";
 import { useRemoteSessionDeletionUndoListener } from "./session/hooks/useDeleteSession";
 import { refreshLegacySettingsSnapshots } from "./settings/legacy-snapshots";
 import { migratePlaintextAiProviderApiKeys } from "./settings/providers";
 import { initializeApplicationSettings } from "./settings/queries";
 import { initializeAppExitFlush } from "./shared/app-exit";
-import { initializeAppStoreBuild, isAppStoreBuild } from "./shared/app-store";
+import { initializeAppStoreBuild } from "./shared/app-store";
 import { useConfigValue } from "./shared/config";
 import { ErrorComponent, NotFoundComponent } from "./shared/control";
 import { LongLoadGate } from "./shared/long-load-gate";
@@ -128,7 +126,6 @@ function ReadyApp() {
             {isMainWindow ? <EventListeners /> : null}
             {isMainWindow ? <TrayScheduleSync /> : null}
             {isMainWindow ? <TrayRecordingSync /> : null}
-            {isMainWindow && !isAppStoreBuild() ? <UpdaterMeetingSync /> : null}
             <Toaster position="bottom-right" theme={theme} />
           </AppLockGate>
         </TaskSchedulerProvider>
@@ -142,16 +139,6 @@ initWindowsPlugin();
 const isMainWindow = getCurrentWebviewWindowLabel() === "main";
 
 if (isMainWindow) {
-  void analyticsCommands.eventFireAndForget({ event: "app_started" });
-  try {
-    const firstOpenKey = "anarlog:analytics:first-opened";
-    if (localStorage.getItem(firstOpenKey) === null) {
-      localStorage.setItem(firstOpenKey, "1");
-      trackAnalyticsEvent("app_first_opened", {
-        first_open_marker: "local_install",
-      });
-    }
-  } catch {}
   void initializeAppExitFlush().catch((error) => {
     captureOperationalError(error, {
       operation: "app_exit_flush_initialize",

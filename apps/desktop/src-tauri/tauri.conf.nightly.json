@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Anarlog Nightly",
-  "mainBinaryName": "anarlog-nightly",
-  "identifier": "com.hyprnote.nightly",
+  "productName": "Anarlog Platform",
+  "mainBinaryName": "anarlog-platform",
+  "identifier": "com.stillerman.anarlog",
   "plugins": {
     "deep-link": {
       "desktop": {
@@ -11,12 +11,6 @@
           "hyprnote-nightly"
         ]
       }
-    },
-    "updater": {
-      "active": true,
-      "endpoints": [
-        "https://desktop.anarlog.so/update/{{target}}-{{arch}}-{{bundle_type}}/{{current_version}}?channel=nightly"
-      ]
     }
   },
   "bundle": {
@@ -40,6 +34,7 @@
       "webviewInstallMode": {
         "type": "offlineInstaller"
       }
-    }
+    },
+    "createUpdaterArtifacts": false
   }
 }

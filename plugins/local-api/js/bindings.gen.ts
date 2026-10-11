@@ -6,6 +6,38 @@
 
 
 export const commands = {
+async platformTargets() : Promise<Result<JsonValue, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:local-api|platform_targets") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async configurePlatformTarget(agent: string, endpoint: string, secret: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:local-api|configure_platform_target", { agent, endpoint, secret }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async previewPlatformMeeting(agent: string, meetingId: string) : Promise<Result<JsonValue, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:local-api|preview_platform_meeting", { agent, meetingId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async sendPlatformMeeting(deliveryId: string) : Promise<Result<JsonValue, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("plugin:local-api|send_platform_meeting", { deliveryId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async listWebhooks() : Promise<Result<WebhookInfo[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("plugin:local-api|list_webhooks") };

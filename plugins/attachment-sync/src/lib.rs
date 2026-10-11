@@ -12,19 +12,8 @@ pub use models::*;
 const PLUGIN_NAME: &str = "attachment-sync";
 
 pub(crate) fn configured_supabase_url() -> Option<&'static str> {
-    #[cfg(not(debug_assertions))]
-    {
-        option_env!("VITE_SUPABASE_URL").filter(|value| !value.trim().is_empty())
-    }
-
-    #[cfg(debug_assertions)]
-    {
-        Some(
-            option_env!("VITE_SUPABASE_URL")
-                .filter(|value| !value.trim().is_empty())
-                .unwrap_or("http://127.0.0.1:54321"),
-        )
-    }
+    // Upstream cloud attachment transport is unavailable in this fork.
+    None
 }
 
 fn make_specta_builder<R: tauri::Runtime>() -> tauri_specta::Builder<R> {

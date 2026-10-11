@@ -1,5 +1,6 @@
 mod commands;
 mod dispatch;
+mod platform;
 mod types;
 
 pub use dispatch::{EVENT_MEETING_COMPLETED, EVENT_NOTE_ENHANCED, KNOWN_EVENTS};
@@ -12,6 +13,10 @@ fn make_specta_builder() -> tauri_specta::Builder<tauri::Wry> {
         .plugin_name(PLUGIN_NAME)
         .events(tauri_specta::collect_events![])
         .commands(tauri_specta::collect_commands![
+            platform::platform_targets::<tauri::Wry>,
+            platform::configure_platform_target::<tauri::Wry>,
+            platform::preview_platform_meeting::<tauri::Wry>,
+            platform::send_platform_meeting::<tauri::Wry>,
             commands::list_webhooks::<tauri::Wry>,
             commands::create_webhook::<tauri::Wry>,
             commands::delete_webhook::<tauri::Wry>,
@@ -59,7 +64,7 @@ mod test {
         std::fs::write(OUTPUT_FILE, format!("// @ts-nocheck\n{content}")).unwrap();
     }
 
-    async fn seeded_pool() -> sqlx::SqlitePool {
+    pub(super) async fn seeded_pool() -> sqlx::SqlitePool {
         let db = anlg_db_core::Db::connect_memory_plain().await.unwrap();
         anlg_db_app::prepare_schema(&db).await.unwrap();
         sqlx::query(

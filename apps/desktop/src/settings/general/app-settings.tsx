@@ -27,7 +27,6 @@ interface AppSettingsViewProps {
 export function AppSettingsView({
   appStoreBuild,
   autostart,
-  automaticUpdates,
   showAppInDock,
   showTrayIcon,
 }: AppSettingsViewProps) {
@@ -47,17 +46,6 @@ export function AppSettingsView({
                 }
                 checked={autostart.value}
                 onChange={autostart.onChange}
-              />
-              <SettingSwitchRow
-                title={<Trans>Automatically install updates</Trans>}
-                description={
-                  <Trans>
-                    Stay current with updates installed the next time Anarlog
-                    opens.
-                  </Trans>
-                }
-                checked={automaticUpdates.value}
-                onChange={automaticUpdates.onChange}
               />
             </>
           )}

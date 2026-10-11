@@ -1,17 +1,21 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "identifier": "com.hyprnote.desktop",
+  "identifier": "com.stillerman.anarlog",
   "app": {
     "macOSPrivateApi": false
   },
   "build": {
-    "features": ["app-store"]
+    "features": [
+      "app-store"
+    ]
   },
   "bundle": {
     "category": "Productivity",
     "createUpdaterArtifacts": false,
     "externalBin": [],
-    "targets": ["app"],
+    "targets": [
+      "app"
+    ],
     "macOS": {
       "entitlements": "./Entitlements.app-store.plist",
       "files": {
@@ -19,9 +23,7 @@
       }
     }
   },
-  "plugins": {
-    "updater": {
-      "active": false
-    }
-  }
+  "plugins": {},
+  "productName": "Anarlog Platform",
+  "mainBinaryName": "anarlog-platform"
 }

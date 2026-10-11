@@ -1,39 +1,11 @@
-use tauri::Manager;
-
-const MAX_CONCURRENT_FIRE_AND_FORGET_EVENTS: usize = 32;
-
 mod commands;
 mod error;
 mod ext;
-mod session;
-mod store;
 
 pub use error::{Error, Result};
 pub use ext::*;
-use session::*;
-use store::*;
 
 pub use anlg_analytics::*;
-
-pub struct ManagedState {
-    client: anlg_analytics::AnalyticsClient,
-    fire_and_forget_slots: std::sync::Arc<tokio::sync::Semaphore>,
-    groups: std::sync::Mutex<std::collections::HashMap<String, String>>,
-    session: std::sync::Mutex<SessionTracker>,
-}
-
-impl ManagedState {
-    fn new(client: anlg_analytics::AnalyticsClient) -> Self {
-        Self {
-            client,
-            fire_and_forget_slots: std::sync::Arc::new(tokio::sync::Semaphore::new(
-                MAX_CONCURRENT_FIRE_AND_FORGET_EVENTS,
-            )),
-            groups: std::sync::Mutex::new(std::collections::HashMap::new()),
-            session: std::sync::Mutex::new(SessionTracker::new(std::time::SystemTime::now())),
-        }
-    }
-}
 
 const PLUGIN_NAME: &str = "analytics";
 
@@ -57,33 +29,6 @@ pub fn init<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
 
     tauri::plugin::Builder::new(PLUGIN_NAME)
         .invoke_handler(specta_builder.invoke_handler())
-        .setup(|app, _api| {
-            let posthog_key = {
-                #[cfg(not(debug_assertions))]
-                {
-                    let v = env!("POSTHOG_API_KEY");
-                    assert!(v.starts_with("phc_"));
-                    Some(v)
-                }
-
-                #[cfg(debug_assertions)]
-                {
-                    option_env!("POSTHOG_API_KEY")
-                }
-            };
-
-            let client = {
-                let mut builder = anlg_analytics::AnalyticsClientBuilder::default();
-                if let Some(key) = posthog_key {
-                    builder = builder.with_posthog(key);
-                }
-
-                builder.build()
-            };
-
-            assert!(app.manage(ManagedState::new(client)));
-            Ok(())
-        })
         .build()
 }
 

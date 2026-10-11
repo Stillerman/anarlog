@@ -1,4 +1,8 @@
 const COMMANDS: &[&str] = &[
+    "platform_targets",
+    "configure_platform_target",
+    "preview_platform_meeting",
+    "send_platform_meeting",
     "list_webhooks",
     "create_webhook",
     "delete_webhook",

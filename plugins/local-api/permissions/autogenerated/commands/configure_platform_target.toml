@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-configure-platform-target"
+description = "Enables the configure_platform_target command without any pre-configured scope."
+commands.allow = ["configure_platform_target"]
+
+[[permission]]
+identifier = "deny-configure-platform-target"
+description = "Denies the configure_platform_target command without any pre-configured scope."
+commands.deny = ["configure_platform_target"]
