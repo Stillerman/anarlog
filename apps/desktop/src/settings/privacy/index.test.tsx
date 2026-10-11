@@ -70,28 +70,6 @@ describe("SettingsPrivacy", () => {
 
   afterEach(cleanup);
 
-  it("controls usage data and error reporting independently", () => {
-    render(<SettingsPrivacy />);
-
-    const posthog = screen.getByRole("switch", {
-      name: "Share usage data",
-    });
-    const errorReporting = screen.getByRole("switch", { name: "Error" });
-
-    expect(posthog.getAttribute("data-state")).toBe("checked");
-    expect(errorReporting.getAttribute("data-state")).toBe("unchecked");
-
-    fireEvent.click(posthog);
-    fireEvent.click(errorReporting);
-
-    expect(mocks.setSettingValues).toHaveBeenNthCalledWith(1, {
-      telemetry_consent: false,
-    });
-    expect(mocks.setSettingValues).toHaveBeenNthCalledWith(2, {
-      crash_reporting_consent: true,
-    });
-  });
-
   it("requires device authentication before locking the app", async () => {
     render(<SettingsPrivacy />);
 

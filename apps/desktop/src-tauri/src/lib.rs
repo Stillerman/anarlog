@@ -10,14 +10,11 @@ mod startup;
 mod store;
 mod supervisor;
 
-use db::{cloudsync_runtime_config_from_env, open_desktop_db};
+use db::open_desktop_db;
 use ext::*;
 use store::*;
 
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
-};
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use tauri::{Emitter, Manager};
 use tauri_plugin_permissions::{Permission, PermissionsPluginExt};
@@ -36,13 +33,13 @@ const EXIT_HARD_FALLBACK_TIMEOUT: std::time::Duration = std::time::Duration::fro
 pub(crate) struct CrashReportingState;
 
 impl CrashReportingState {
-    fn new(enabled: bool) -> Self {
-        CRASH_REPORTING_ENABLED.store(enabled, Ordering::SeqCst);
+    fn new(_enabled: bool) -> Self {
+        CRASH_REPORTING_ENABLED.store(false, Ordering::SeqCst);
         Self
     }
 
-    fn set_enabled(&self, enabled: bool) {
-        CRASH_REPORTING_ENABLED.store(enabled, Ordering::SeqCst);
+    fn set_enabled(&self, _enabled: bool) {
+        CRASH_REPORTING_ENABLED.store(false, Ordering::SeqCst);
     }
 }
 
@@ -50,18 +47,7 @@ fn run_crash_reporter_process() -> ! {
     std::process::exit(0);
 }
 
-async fn load_crash_reporting_consent(db: &anlg_db_core::Db) -> bool {
-    let rows = sqlx::query_as::<_, (String, String)>(
-        "SELECT id, value_json FROM app_settings \
-         WHERE id IN ('crash_reporting_consent', 'telemetry_consent')",
-    )
-    .fetch_all(db.pool())
-    .await
-    .unwrap_or_default();
-
-    crash_reporting_consent_from_rows(&rows)
-}
-
+#[cfg(test)]
 fn crash_reporting_consent_from_rows(rows: &[(String, String)]) -> bool {
     let read = |id: &str| {
         rows.iter()
@@ -155,91 +141,30 @@ pub fn main() {
         }
     };
 
-    let (root_supervisor_ctx, root_supervisor_handle, db, crash_reporting_enabled) = runtime
-        .block_on(async {
-            let (root_supervisor_ctx, root_supervisor_handle) =
-                match supervisor::spawn_root_supervisor().await {
-                    Some((ctx, handle)) => (Some(ctx), Some(handle)),
-                    None => (None, None),
-                };
-
-            let startup_indicator = startup::SlowStartupIndicator::show_after_delay();
-            startup::consolidate_custom_storage(&identifier);
-            let db = match open_desktop_db(&identifier).await {
-                Ok(db) => db,
-                Err(error) => {
-                    startup_indicator.dismiss();
-                    exit_after_startup_failure(&identifier, &error)
-                }
+    let (root_supervisor_ctx, root_supervisor_handle, db) = runtime.block_on(async {
+        let (root_supervisor_ctx, root_supervisor_handle) =
+            match supervisor::spawn_root_supervisor().await {
+                Some((ctx, handle)) => (Some(ctx), Some(handle)),
+                None => (None, None),
             };
-            startup_indicator.dismiss();
-            let crash_reporting_enabled = load_crash_reporting_consent(&db).await;
-            (
-                root_supervisor_ctx,
-                root_supervisor_handle,
-                db,
-                crash_reporting_enabled,
-            )
-        });
 
-    let sentry_client = {
-        let dsn = if std::env::var_os("ANARLOG_DISABLE_SENTRY").is_some() {
-            None
-        } else {
-            option_env!("SENTRY_DSN")
+        let startup_indicator = startup::SlowStartupIndicator::show_after_delay();
+        startup::consolidate_custom_storage(&identifier);
+        let db = match open_desktop_db(&identifier).await {
+            Ok(db) => db,
+            Err(error) => {
+                startup_indicator.dismiss();
+                exit_after_startup_failure(&identifier, &error)
+            }
         };
+        startup_indicator.dismiss();
+        (root_supervisor_ctx, root_supervisor_handle, db)
+    });
 
-        if let Some(dsn) = dsn {
-            let release =
-                option_env!("APP_VERSION").map(|v| format!("anarlog-desktop@{}", v).into());
-
-            let client = sentry::init((
-                dsn,
-                sentry::ClientOptions {
-                    release,
-                    traces_sample_rate: 1.0,
-                    auto_session_tracking: false,
-                    before_send: Some(Arc::new(|event| {
-                        CRASH_REPORTING_ENABLED
-                            .load(Ordering::SeqCst)
-                            .then(|| tauri_plugin_tracing::redaction::sanitize_sentry_event(event))
-                            .flatten()
-                    })),
-                    before_breadcrumb: Some(Arc::new(|breadcrumb| {
-                        CRASH_REPORTING_ENABLED
-                            .load(Ordering::SeqCst)
-                            .then_some(breadcrumb)
-                    })),
-                    ..Default::default()
-                },
-            ));
-
-            sentry::configure_scope(|scope| {
-                scope.set_tag("service.namespace", "anarlog");
-                scope.set_tag("service.name", "desktop");
-                scope.set_tag(
-                    "release_channel",
-                    option_env!("RELEASE_CHANNEL").unwrap_or("dev"),
-                );
-            });
-
-            Some(client)
-        } else {
-            None
-        }
-    };
-    let crash_reporting_state = CrashReportingState::new(crash_reporting_enabled);
+    let crash_reporting_state = CrashReportingState::new(false);
 
     let audio: std::sync::Arc<dyn anlg_audio_actual::AudioProvider> =
         create_audio_provider(&context.config().identifier);
-    let cloudsync_config = match cloudsync_runtime_config_from_env() {
-        Ok(config) => config,
-        Err(error) => {
-            tracing::warn!(%error, "invalid CloudSync environment configuration; CloudSync disabled");
-            None
-        }
-    };
-
     let mut builder = tauri_plugin_windows::extend_builder(tauri::Builder::default())
         .manage(audio)
         .manage(db.clone())
@@ -285,10 +210,7 @@ pub fn main() {
     }
 
     builder = builder
-        .plugin(tauri_plugin_db::init_with_cloudsync(
-            db.clone(),
-            cloudsync_config,
-        ))
+        .plugin(tauri_plugin_db::init_with_cloudsync(db.clone(), None))
         .plugin(tauri_plugin_bedrock::init());
 
     builder = builder
@@ -310,7 +232,7 @@ pub fn main() {
 
     #[cfg(not(feature = "app-store"))]
     {
-        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+        // Upstream updater is excluded from this fork.
     }
 
     builder = builder
@@ -341,11 +263,11 @@ pub fn main() {
 
     #[cfg(not(feature = "app-store"))]
     {
-        builder = builder.plugin(tauri_plugin_updater2::init());
+        // No background update checks or upstream update installation.
     }
 
     builder = builder
-        .plugin(tauri_plugin_tray::init(!cfg!(feature = "app-store")))
+        .plugin(tauri_plugin_tray::init(false))
         .plugin(tauri_plugin_settings::init())
         .plugin(tauri_plugin_sfx::init())
         .plugin(tauri_plugin_shortcut::init())
@@ -376,10 +298,6 @@ pub fn main() {
             tauri_plugin_autostart::MacosLauncher::LaunchAgent,
             Some(vec!["--background"]),
         ));
-    }
-
-    if let Some(client) = sentry_client.as_ref() {
-        builder = builder.plugin(tauri_plugin_sentry::init_with_no_injection(client));
     }
 
     #[cfg(any(debug_assertions, feature = "devtools"))]

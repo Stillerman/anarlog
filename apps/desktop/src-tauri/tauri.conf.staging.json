@@ -1,16 +1,16 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Anarlog Staging",
-  "mainBinaryName": "anarlog-staging",
-  "identifier": "com.hyprnote.staging",
+  "productName": "Anarlog Platform",
+  "mainBinaryName": "anarlog-platform",
+  "identifier": "com.stillerman.anarlog",
   "plugins": {
     "deep-link": {
       "desktop": {
-        "schemes": ["anarlog-staging", "hyprnote-staging"]
+        "schemes": [
+          "anarlog-staging",
+          "hyprnote-staging"
+        ]
       }
-    },
-    "updater": {
-      "active": false
     }
   },
   "bundle": {
@@ -29,6 +29,7 @@
       "dmg": {
         "background": "assets/dmg-background-staging.png"
       }
-    }
+    },
+    "createUpdaterArtifacts": false
   }
 }

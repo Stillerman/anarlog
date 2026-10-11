@@ -6,6 +6,7 @@ const DB_FILENAME: &str = "app.db";
 const DB_RESET_MARKER: &str = "app.db.reset-requested";
 pub(crate) const STABLE_BUNDLE_ID: &str = "com.hyprnote.stable";
 pub(crate) const NIGHTLY_BUNDLE_ID: &str = "com.hyprnote.nightly";
+#[cfg(test)]
 const DEFAULT_CLOUDSYNC_INTERVAL_MS: u64 = 30_000;
 const DB_OPEN_LOCK_RETRIES: u32 = 12;
 const DB_OPEN_LOCK_RETRY_DELAY: std::time::Duration = std::time::Duration::from_secs(5);
@@ -88,11 +89,7 @@ pub fn is_newer_schema_error(error: &impl std::fmt::Display) -> bool {
         .to_string()
         .contains("created by a newer version of Anarlog")
 }
-pub fn cloudsync_runtime_config_from_env()
--> Result<Option<anlg_db_core::CloudsyncRuntimeConfig>, String> {
-    cloudsync_runtime_config(|key| std::env::var(key).ok())
-}
-
+#[cfg(test)]
 fn cloudsync_runtime_config(
     get: impl Fn(&str) -> Option<String>,
 ) -> Result<Option<anlg_db_core::CloudsyncRuntimeConfig>, String> {
@@ -156,11 +153,13 @@ fn cloudsync_runtime_config(
     }))
 }
 
+#[cfg(test)]
 fn nonempty(value: String) -> Option<String> {
     let value = value.trim();
     (!value.is_empty()).then(|| value.to_string())
 }
 
+#[cfg(test)]
 fn parse_env_flag(value: String) -> Result<bool, String> {
     match value.to_ascii_lowercase().as_str() {
         "1" | "true" => Ok(true),

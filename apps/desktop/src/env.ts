@@ -20,6 +20,17 @@ export const env = createEnv({
     VITE_POSTHOG_HOST: z.string().min(1).default("https://us.i.posthog.com"),
     VITE_APP_VERSION: z.string().min(1).optional(),
   },
-  runtimeEnv: import.meta.env,
+  runtimeEnv: {
+    ...import.meta.env,
+    VITE_SUPABASE_URL: undefined,
+    VITE_SUPABASE_ANON_KEY: undefined,
+    VITE_AI_API_URL: undefined,
+    VITE_ENTERPRISE_API_URL: undefined,
+    VITE_SENTRY_DSN: undefined,
+    VITE_POSTHOG_API_KEY: undefined,
+    VITE_STATIC_ASSETS_URL: "http://127.0.0.1:9",
+    VITE_API_URL: "http://127.0.0.1:9",
+    VITE_APP_URL: "http://127.0.0.1:9",
+  },
   emptyStringAsUndefined: true,
 });

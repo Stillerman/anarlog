@@ -1,53 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-
-const mocks = vi.hoisted(() => ({
-  addIntegration: vi.fn(),
-  clearBreadcrumbs: vi.fn(),
-  emit: vi.fn(),
-  getClient: vi.fn(),
-  isCrashReportingEnabled: vi.fn(),
-  listener: undefined as
-    | undefined
-    | ((event: { payload: { enabled: boolean } }) => void),
-  listen: vi.fn(),
-  publicStopReplay: vi.fn(),
-  replayIntegration: vi.fn(),
-  setCrashReportingEnabled: vi.fn(),
-  startReplay: vi.fn(),
-  stopReplay: vi.fn(),
-  withScope: vi.fn(),
-}));
-
-vi.mock("@sentry/react", () => ({
-  addIntegration: mocks.addIntegration,
-  captureException: vi.fn(),
-  getClient: mocks.getClient,
-  getCurrentScope: () => ({ clearBreadcrumbs: mocks.clearBreadcrumbs }),
-  getReplay: () => ({ start: mocks.startReplay }),
-  init: vi.fn(),
-  replayIntegration: mocks.replayIntegration,
-  setUser: vi.fn(),
-  withScope: mocks.withScope,
-}));
-
-vi.mock("@tauri-apps/api/event", () => ({
-  emit: mocks.emit,
-  listen: mocks.listen,
-}));
-
-vi.mock("./types/tauri.gen", () => ({
-  commands: {
-    isCrashReportingEnabled: mocks.isCrashReportingEnabled,
-    setCrashReportingEnabled: mocks.setCrashReportingEnabled,
-  },
-}));
-
-vi.mock("./env", () => ({
-  env: {
-    VITE_APP_VERSION: "test",
-    VITE_SENTRY_DSN: "https://public@example.com/1",
-  },
-}));
+import { describe, expect, it, vi } from "vitest";
 
 import {
   captureOperationalError,
@@ -58,32 +9,6 @@ import {
 
 const creditBalanceMessage =
   "Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits.";
-
-beforeEach(() => {
-  vi.clearAllMocks();
-  mocks.listener = undefined;
-  mocks.emit.mockResolvedValue(undefined);
-  mocks.getClient.mockReturnValue({
-    getIntegrationByName: () => ({
-      _replay: { stop: mocks.stopReplay },
-      stop: mocks.publicStopReplay,
-    }),
-  });
-  mocks.isCrashReportingEnabled.mockResolvedValue({
-    status: "ok",
-    data: true,
-  });
-  mocks.setCrashReportingEnabled.mockResolvedValue({
-    status: "ok",
-    data: null,
-  });
-  mocks.listen.mockImplementation(async (_event, listener) => {
-    mocks.listener = listener;
-    return vi.fn();
-  });
-  mocks.replayIntegration.mockReturnValue({ name: "Replay" });
-  mocks.stopReplay.mockResolvedValue(undefined);
-});
 
 describe("normalizeOperationalError", () => {
   it("removes structured, primitive, and arbitrary object failure messages", () => {
@@ -270,7 +195,8 @@ describe("user-caused failures", () => {
 });
 
 describe("captureOperationalError", () => {
-  it("drops user-caused and archived errors but captures operational failures", () => {
+  it("keeps operational diagnostics local without leaking source error messages", () => {
+    const localLog = vi.spyOn(console, "error").mockImplementation(() => {});
     captureOperationalError(new Error(creditBalanceMessage), {
       operation: "chat_completion",
     });
@@ -279,13 +205,17 @@ describe("captureOperationalError", () => {
       { operation: "batch_persist" },
     );
 
-    expect(mocks.withScope).not.toHaveBeenCalled();
-
     captureOperationalError(new Error("socket hang up"), {
       operation: "chat_completion",
     });
 
-    expect(mocks.withScope).toHaveBeenCalledOnce();
+    expect(localLog.mock.calls).toEqual([
+      [
+        "chat_completion",
+        { type: "Error", code: undefined, stage: undefined, status: undefined },
+      ],
+    ]);
+    localLog.mockRestore();
   });
 });
 
@@ -318,88 +248,5 @@ describe("archived operational noise", () => {
         message: "native_error:tauri_plugin_tracing::ext:35",
       }),
     ).toBeNull();
-  });
-});
-
-describe("session replay consent", () => {
-  it("broadcasts revocation and stops the local replay", async () => {
-    vi.resetModules();
-    const {
-      initializeErrorReporting,
-      setErrorReportingEnabled,
-      setSessionReplayAnalyticsEnabled,
-    } = await import("./error-reporting");
-
-    initializeErrorReporting();
-    setSessionReplayAnalyticsEnabled(true);
-    await vi.waitFor(() => expect(mocks.addIntegration).toHaveBeenCalledOnce());
-
-    await setErrorReportingEnabled(false);
-
-    expect(mocks.stopReplay).toHaveBeenCalledWith({
-      forceFlush: false,
-      reason: "consent_revoked",
-    });
-    expect(mocks.publicStopReplay).not.toHaveBeenCalled();
-    expect(mocks.setCrashReportingEnabled).toHaveBeenCalledWith(false);
-    expect(mocks.emit).toHaveBeenCalledWith(
-      "anlg:error-reporting-consent-changed",
-      { enabled: false },
-    );
-  });
-
-  it("stops replay when another webview revokes consent", async () => {
-    vi.resetModules();
-    const { initializeErrorReporting, setSessionReplayAnalyticsEnabled } =
-      await import("./error-reporting");
-
-    initializeErrorReporting();
-    setSessionReplayAnalyticsEnabled(true);
-    await vi.waitFor(() => expect(mocks.addIntegration).toHaveBeenCalledOnce());
-
-    mocks.listener?.({ payload: { enabled: false } });
-
-    expect(mocks.stopReplay).toHaveBeenCalledOnce();
-  });
-
-  it("restarts replay when Sentry consent is restored", async () => {
-    vi.resetModules();
-    const {
-      initializeErrorReporting,
-      setErrorReportingEnabled,
-      setSessionReplayAnalyticsEnabled,
-    } = await import("./error-reporting");
-
-    initializeErrorReporting();
-    setSessionReplayAnalyticsEnabled(true);
-    await vi.waitFor(() => expect(mocks.addIntegration).toHaveBeenCalledOnce());
-
-    await setErrorReportingEnabled(false);
-    await setErrorReportingEnabled(true);
-
-    expect(mocks.startReplay).toHaveBeenCalledOnce();
-  });
-
-  it("does not attach replay when revocation races with consent loading", async () => {
-    vi.resetModules();
-    let resolveConsent!: (value: { status: "ok"; data: boolean }) => void;
-    mocks.isCrashReportingEnabled.mockReturnValueOnce(
-      new Promise((resolve) => {
-        resolveConsent = resolve;
-      }),
-    );
-    const { initializeErrorReporting, setSessionReplayAnalyticsEnabled } =
-      await import("./error-reporting");
-
-    initializeErrorReporting();
-    setSessionReplayAnalyticsEnabled(true);
-    await vi.waitFor(() =>
-      expect(mocks.isCrashReportingEnabled).toHaveBeenCalledOnce(),
-    );
-    mocks.listener?.({ payload: { enabled: false } });
-    resolveConsent({ status: "ok", data: true });
-
-    await Promise.resolve();
-    expect(mocks.addIntegration).not.toHaveBeenCalled();
   });
 });

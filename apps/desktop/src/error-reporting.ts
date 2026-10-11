@@ -1,20 +1,10 @@
-import * as Sentry from "@sentry/react";
 import type { ErrorEvent, SeverityLevel } from "@sentry/react";
-import { emit, listen } from "@tauri-apps/api/event";
 
 import { isUserError, isUserErrorEvent } from "@anlg/user-error";
-
-import { env } from "./env";
-import { commands as desktopCommands } from "./types/tauri.gen";
 
 type ErrorContextValue = null | boolean | number | string;
 const SAFE_IDENTIFIER_RE = /^[a-zA-Z0-9_.:/-]{1,128}$/;
 const SAFE_STACK_FUNCTION_RE = /^[a-zA-Z0-9_$.[\]<>-]{1,128}$/;
-const ERROR_REPORTING_CONSENT_EVENT = "anlg:error-reporting-consent-changed";
-let errorReportingEnabled = false;
-let sessionReplayAnalyticsEnabled = false;
-let errorReportingConsentRevision = 0;
-
 // Archived Sentry issue types. Local error logs stay; Sentry should not reopen
 // or bill for issues that were already solved. Keep in sync with
 // `IGNORED_ERROR_MARKERS` in crates/user-error/src/lib.rs.
@@ -213,139 +203,19 @@ export function sanitizeErrorEvent(event: ErrorEvent): ErrorEvent | null {
   return event;
 }
 
-export function initializeErrorReporting() {
-  if (!env.VITE_SENTRY_DSN) return;
-
-  Sentry.init({
-    dsn: env.VITE_SENTRY_DSN,
-    release: env.VITE_APP_VERSION
-      ? `anarlog-desktop@${env.VITE_APP_VERSION}`
-      : undefined,
-    environment: import.meta.env.MODE,
-    sendDefaultPii: false,
-    tracePropagationTargets: [],
-    beforeSend: (event) =>
-      errorReportingEnabled ? sanitizeErrorEvent(event) : null,
-    replaysSessionSampleRate: 0.1,
-    replaysOnErrorSampleRate: 1.0,
-    initialScope: {
-      tags: {
-        "service.name": "desktop",
-        "service.namespace": "anarlog",
-        "anarlog.surface": "desktop",
-      },
-    },
-  });
-
-  void initializeErrorReportingConsent();
-}
-
-let sessionReplayInstalled = false;
-let sessionReplayRunning = false;
-
-async function initializeErrorReportingConsent() {
-  try {
-    await listen<{ enabled: boolean }>(
-      ERROR_REPORTING_CONSENT_EVENT,
-      ({ payload }) => {
-        errorReportingConsentRevision += 1;
-        applyErrorReportingConsent(payload.enabled);
-      },
-    );
-    const consentRevision = errorReportingConsentRevision;
-    const enabled = await desktopCommands.isCrashReportingEnabled();
-    if (
-      enabled.status === "ok" &&
-      consentRevision === errorReportingConsentRevision
-    ) {
-      applyErrorReportingConsent(enabled.data);
-    }
-  } catch {
-    // Without a readable consent state, keep error reporting off.
-  }
-}
-
-function applyErrorReportingConsent(enabled: boolean) {
-  errorReportingEnabled = enabled;
-  Sentry.getCurrentScope().clearBreadcrumbs();
-
-  if (enabled && sessionReplayAnalyticsEnabled) {
-    startSessionReplay();
-  } else {
-    stopSessionReplay();
-  }
-}
-
-export function setSessionReplayAnalyticsEnabled(enabled: boolean) {
-  sessionReplayAnalyticsEnabled = enabled;
-  applyErrorReportingConsent(errorReportingEnabled);
-}
-
-function startSessionReplay() {
-  if (sessionReplayRunning) return;
-
-  if (sessionReplayInstalled) {
-    Sentry.getReplay()?.start();
-    sessionReplayRunning = true;
-    return;
-  }
-
-  Sentry.addIntegration(
-    Sentry.replayIntegration({
-      blockAllMedia: true,
-      maskAllText: true,
-    }),
-  );
-  sessionReplayInstalled = true;
-  sessionReplayRunning = true;
-}
-
-function stopSessionReplay() {
-  if (!sessionReplayRunning) return;
-
-  sessionReplayRunning = false;
-  const replay = Sentry.getClient()?.getIntegrationByName?.("Replay") as
-    | {
-        _replay?: {
-          stop?: (options: {
-            forceFlush: boolean;
-            reason: string;
-          }) => Promise<void>;
-        };
-      }
-    | undefined;
-  // The public stop() force-flushes session recordings, so consent revocation
-  // must stop the internal controller without sending its buffered segment.
-  void replay?._replay
-    ?.stop?.({ forceFlush: false, reason: "consent_revoked" })
-    .catch(() => {});
-}
-
-export async function setErrorReportingEnabled(enabled: boolean) {
-  const result = await desktopCommands.setCrashReportingEnabled(enabled);
-  if (result.status === "error") {
-    throw new Error(result.error);
-  }
-
-  errorReportingConsentRevision += 1;
-  applyErrorReportingConsent(enabled);
-  await emit(ERROR_REPORTING_CONSENT_EVENT, { enabled });
-}
-
+// Keep local error handling and the sanitizers used by callers, but no reporter,
+// replay recorder, account identity, or telemetry transport is initialized.
+export function initializeErrorReporting() {}
+export function setSessionReplayAnalyticsEnabled(_enabled: boolean) {}
+export async function setErrorReportingEnabled(_enabled: boolean) {}
 export function reportCaughtReactError(error: unknown) {
-  if (isUserError(error) || isIgnoredError(error)) return;
-  Sentry.captureException(error, {
-    tags: { "anarlog.operation": "react_error_boundary" },
-  });
+  if (!isUserError(error) && !isIgnoredError(error))
+    console.error("React error", operationalErrorMetadata(error));
 }
-
 export function captureOperationalError(
   error: unknown,
   {
     operation,
-    level = "error",
-    tags,
-    context,
   }: {
     operation: string;
     level?: SeverityLevel;
@@ -353,34 +223,7 @@ export function captureOperationalError(
     context?: Record<string, ErrorContextValue>;
   },
 ) {
-  if (isUserError(error) || isIgnoredError(error)) return;
-
-  const metadata = operationalErrorMetadata(error);
-  const exception = normalizeOperationalError(error, operation);
-
-  return Sentry.withScope((scope) => {
-    scope.setLevel(level);
-    scope.setTag("anarlog.operation", operation);
-    scope.setTag("error.type", metadata.type);
-    if (metadata.code) scope.setTag("error.code", metadata.code);
-    if (metadata.stage) {
-      scope.setTag("anarlog.error.stage", metadata.stage);
-    }
-    if (metadata.status) {
-      scope.setTag("http.response.status_code", metadata.status);
-    }
-    for (const [key, value] of Object.entries(tags ?? {})) {
-      if (value !== null) {
-        scope.setTag(`anarlog.${key}`, value);
-      }
-    }
-    if (context) {
-      scope.setContext("anarlog.operation", context);
-    }
-    return Sentry.captureException(exception);
-  });
+  if (!isUserError(error) && !isIgnoredError(error))
+    console.error(operation, operationalErrorMetadata(error));
 }
-
-export function setErrorReportingUser(_userId: string | null) {
-  Sentry.setUser(null);
-}
+export function setErrorReportingUser(_userId: string | null) {}

@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Anarlog",
-  "mainBinaryName": "anarlog",
-  "identifier": "com.hyprnote.stable",
+  "productName": "Anarlog Platform",
+  "mainBinaryName": "anarlog-platform",
+  "identifier": "com.stillerman.anarlog",
   "bundle": {
     "icon": [
       "icons/stable/32x32.png",
@@ -13,9 +13,15 @@
     ],
     "linux": {
       "deb": {
-        "provides": ["char"],
-        "conflicts": ["char"],
-        "replaces": ["char"]
+        "provides": [
+          "char"
+        ],
+        "conflicts": [
+          "char"
+        ],
+        "replaces": [
+          "char"
+        ]
       }
     },
     "macOS": {
@@ -27,17 +33,17 @@
       "webviewInstallMode": {
         "type": "offlineInstaller"
       }
-    }
+    },
+    "createUpdaterArtifacts": false
   },
   "plugins": {
     "deep-link": {
-      "desktop": { "schemes": ["anarlog", "hyprnote"] }
-    },
-    "updater": {
-      "active": true,
-      "endpoints": [
-        "https://desktop.anarlog.so/update/{{target}}-{{arch}}-{{bundle_type}}/{{current_version}}?channel=stable"
-      ]
+      "desktop": {
+        "schemes": [
+          "anarlog",
+          "hyprnote"
+        ]
+      }
     }
   }
 }

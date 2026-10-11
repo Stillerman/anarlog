@@ -4,6 +4,10 @@ Default permissions for the plugin
 
 #### This default permission set includes the following:
 
+- `allow-platform-targets`
+- `allow-configure-platform-target`
+- `allow-preview-platform-meeting`
+- `allow-send-platform-meeting`
 - `allow-list-webhooks`
 - `allow-create-webhook`
 - `allow-delete-webhook`
@@ -23,6 +27,32 @@ Default permissions for the plugin
 <th>Description</th>
 </tr>
 
+
+<tr>
+<td>
+
+`local-api:allow-configure-platform-target`
+
+</td>
+<td>
+
+Enables the configure_platform_target command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`local-api:deny-configure-platform-target`
+
+</td>
+<td>
+
+Denies the configure_platform_target command without any pre-configured scope.
+
+</td>
+</tr>
 
 <tr>
 <td>
@@ -209,6 +239,32 @@ Denies the list_webhooks command without any pre-configured scope.
 <tr>
 <td>
 
+`local-api:allow-platform-targets`
+
+</td>
+<td>
+
+Enables the platform_targets command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`local-api:deny-platform-targets`
+
+</td>
+<td>
+
+Denies the platform_targets command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
 `local-api:allow-prepare-drive-markdown`
 
 </td>
@@ -228,6 +284,58 @@ Enables the prepare_drive_markdown command without any pre-configured scope.
 <td>
 
 Denies the prepare_drive_markdown command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`local-api:allow-preview-platform-meeting`
+
+</td>
+<td>
+
+Enables the preview_platform_meeting command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`local-api:deny-preview-platform-meeting`
+
+</td>
+<td>
+
+Denies the preview_platform_meeting command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`local-api:allow-send-platform-meeting`
+
+</td>
+<td>
+
+Enables the send_platform_meeting command without any pre-configured scope.
+
+</td>
+</tr>
+
+<tr>
+<td>
+
+`local-api:deny-send-platform-meeting`
+
+</td>
+<td>
+
+Denies the send_platform_meeting command without any pre-configured scope.
 
 </td>
 </tr>
