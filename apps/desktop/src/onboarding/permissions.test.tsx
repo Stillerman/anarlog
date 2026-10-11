@@ -66,16 +66,15 @@ describe("PermissionsSection", () => {
     });
   });
 
-  it("waits for all three macOS permissions before continuing", () => {
+  it("requires audio permissions while keeping Accessibility optional", () => {
     const onContinue = vi.fn();
     mocks.permissions.microphone.status = "authorized";
-    mocks.permissions.systemAudio.status = "authorized";
 
     const view = render(<PermissionsSection onContinue={onContinue} />);
 
     expect(onContinue).not.toHaveBeenCalled();
 
-    mocks.permissions.accessibility.status = "authorized";
+    mocks.permissions.systemAudio.status = "authorized";
     view.rerender(<PermissionsSection onContinue={onContinue} />);
 
     expect(onContinue).toHaveBeenCalledTimes(1);
@@ -93,7 +92,7 @@ describe("PermissionsSection", () => {
 
     render(<PermissionsSection onContinue={onContinue} />);
 
-    expect(screen.queryByText("Help Anarlog read meeting activity")).toBeNull();
+    expect(screen.queryByText("Optional: read meeting activity")).toBeNull();
     expect(mocks.usePermission).not.toHaveBeenCalledWith("accessibility");
     expect(onContinue).toHaveBeenCalledTimes(1);
   });

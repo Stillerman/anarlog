@@ -228,8 +228,8 @@ function OnboardingScreenContent({
               currentPlatform === "macos" ? (
                 <Trans>
                   Anarlog needs microphone and system audio to transcribe your
-                  meetings, plus Accessibility to read meeting controls, visible
-                  chat.
+                  meetings. Optional Accessibility access can read meeting
+                  controls and visible chat.
                 </Trans>
               ) : (
                 <Trans>

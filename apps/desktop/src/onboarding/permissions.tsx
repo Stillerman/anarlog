@@ -156,9 +156,7 @@ function PermissionsSectionContent({
   );
 
   const isComplete =
-    mic.status === "authorized" &&
-    systemAudio.status === "authorized" &&
-    (!accessibility || accessibility.status === "authorized");
+    mic.status === "authorized" && systemAudio.status === "authorized";
 
   const handleAction = (
     permission: string,
@@ -240,7 +238,7 @@ function PermissionsSectionContent({
         {accessibility && (
           <PermissionBlock
             enabledLabel={t`Anarlog can read meeting details`}
-            enableLabel={t`Help Anarlog read meeting activity`}
+            enableLabel={t`Optional: read meeting activity`}
             enabledBody={t`Meeting details access turned on`}
             enableBody={
               accessibilityGuidance
